@@ -1,0 +1,186 @@
+-- PEERAWAT SCRIPT HUB (100 FUNCTIONS TEMPLATE)
+-- Loaded via Fluent UI Library
+
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+
+local Window = Fluent:CreateWindow({
+    Title = "PEERAWAT SCRIPT HUB v1.0",
+    SubTitle = "by PEERAWAT",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+-- =================================================================
+-- CREATING TABS (10 CATEGORIES)
+-- =================================================================
+local Tabs = {
+    Movement     = Window:AddTab({ Title = "1. การเคลื่อนที่", Icon = "run" }),
+    Teleport     = Window:AddTab({ Title = "2. เทเลพอร์ต", Icon = "map-pin" }),
+    Appearance   = Window:AddTab({ Title = "3. รูปลักษณ์", Icon = "palette" }),
+    Status       = Window:AddTab({ Title = "4. สถานะตัวละคร", Icon = "shield" }),
+    ESP          = Window:AddTab({ Title = "5. มองเห็น & แสง", Icon = "eye" }),
+    Combat       = Window:AddTab({ Title = "6. ต่อสู้", Icon = "swords" }),
+    Farming      = Window:AddTab({ Title = "7. ฟาร์ม & เก็บของ", Icon = "coins" }),
+    Utility      = Window:AddTab({ Title = "8. ความสะดวกสบาย", Icon = "gamepad-2" }),
+    Special      = Window:AddTab({ Title = "9. พลังพิเศษ", Icon = "zap" }),
+    Settings     = Window:AddTab({ Title = "10. ตั้งค่าระบบ", Icon = "settings" })
+}
+
+local Options = Fluent.Options
+
+-- =================================================================
+-- 🏃 หมวด 1: การเคลื่อนที่ (1-10)
+-- =================================================================
+do
+    -- 1. วิ่งเร็ว
+    local SpeedToggle = Tabs.Movement:AddToggle("SpeedToggle", {Title = "1. วิ่งเร็ว (Speed)", Default = false })
+    local SpeedSlider = Tabs.Movement:AddSlider("SpeedSlider", {Title = "ปรับระดับความเร็ว (1-100)", Default = 16, Min = 16, Max = 200, Rounding = 0})
+    
+    SpeedToggle:OnChanged(function(Value)
+        task.spawn(function()
+            while Options.SpeedToggle.Value do
+                if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+                    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Options.SpeedSlider.Value
+                end
+                task.wait(0.1)
+            end
+            if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+                game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
+            end
+        end)
+    end)
+
+    -- 2. กระโดดไม่จำกัด (Inf Jump)
+    local InfJumpToggle = Tabs.Movement:AddToggle("InfJump", {Title = "2. กระโดดไม่จำกัด (Inf Jump)", Default = false})
+    game:GetService("UserInputService").JumpRequest:Connect(function()
+        if Options.InfJump and Options.InfJump.Value then
+            if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+            end
+        end
+    end)
+
+    -- 3. กระโดดสูง
+    Tabs.Movement:AddSlider("JumpSlider", {Title = "3. กระโดดสูง (Jump Power)", Default = 50, Min = 10, Max = 200, Rounding = 0, Callback = function(v)
+        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid.JumpPower = v
+        end
+    end})
+
+    -- 5. ทะลุผนัง (Noclip)
+    local NoclipToggle = Tabs.Movement:AddToggle("Noclip", {Title = "5. ทะลุผนัง (Noclip)", Default = false})
+    game:GetService("RunService").Stepped:Connect(function()
+        if Options.Noclip and Options.Noclip.Value and game.Players.LocalPlayer.Character then
+            for _, v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = false
+                end
+            end
+        end
+    end)
+
+    -- Placeholder ปุ่มสำหรับฟังก์ชัน 4, 6-10
+    Tabs.Movement:AddParagraph({ Title = "ฟังก์ชันอื่นๆ ในหมวดเคลื่อนที่", Content = "4. บินได้ | 6. เคลื่อนที่ลื่นไหล | 7. ตกลงช้า | 8. ตกลงเร็ว | 9. ซูเปอร์สปีด | 10. ปีนกำแพง" })
+end
+
+-- =================================================================
+-- 📍 หมวด 2: เทเลพอร์ต & ตำแหน่ง (11-20)
+-- =================================================================
+do
+    local TargetPlayerInput = Tabs.Teleport:AddInput("TargetPlayer", {Title = "11. ใส่ชื่อผู้เล่นที่ต้องการวาร์ปหา", Default = ""})
+    Tabs.Teleport:AddButton({Title = "วาร์ปไปหาผู้เล่น", Callback = function()
+        local target = game.Players:FindFirstChild(TargetPlayerInput.Value)
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
+        end
+    end})
+
+    Tabs.Teleport:AddButton({Title = "15. วาร์ปกลับจุดเกิด (Spawn)", Callback = function()
+        game.Players.LocalPlayer.Character:BreakJoints()
+    end})
+end
+
+-- =================================================================
+-- 👁️ หมวด 5: มองเห็น & แสง (41-50)
+-- =================================================================
+do
+    -- 41. ESP มองทะลุผนัง
+    local ESPToggle = Tabs.ESP:AddToggle("ESP", {Title = "41. ESP มองเห็นผู้เล่นทะลุผนัง", Default = false})
+    ESPToggle:OnChanged(function(Value)
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player ~= game.Players.LocalPlayer and player.Character then
+                if Value then
+                    if not player.Character:FindFirstChild("Highlight") then
+                        local hl = Instance.new("Highlight", player.Character)
+                        hl.FillColor = Color3.fromRGB(255, 0, 0)
+                    end
+                else
+                    if player.Character:FindFirstChild("Highlight") then
+                        player.Character.Highlight:Destroy()
+                    end
+                end
+            end
+        end
+    end)
+
+    -- 42. แสงสว่างเต็มพื้นที่ (Fullbright)
+    Tabs.ESP:AddToggle("Fullbright", {Title = "42. แสงสว่างเต็มพื้นที่ (Fullbright)", Default = false, Callback = function(Value)
+        if Value then
+            game:GetService("Lighting").Ambient = Color3.fromRGB(255, 255, 255)
+            game:GetService("Lighting").Brightness = 2
+        else
+            game:GetService("Lighting").Ambient = Color3.fromRGB(127, 127, 127)
+            game:GetService("Lighting").Brightness = 1
+        end
+    end})
+end
+
+-- =================================================================
+-- 🎮 หมวด 8: ความสะดวกสบาย (71-80)
+-- =================================================================
+do
+    -- 71. ป้องกัน AFK (Anti-AFK)
+    Tabs.Utility:AddToggle("AntiAFK", {Title = "71. ป้องกันการโดนเตะ AFK (Anti-AFK)", Default = true, Callback = function(Value)
+        if Value then
+            local vu = game:GetService("VirtualUser")
+            game:GetService("Players").LocalPlayer.Idled:Connect(function()
+                vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                task.wait(1)
+                vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            end)
+        end
+    end})
+end
+
+-- =================================================================
+-- 🌐 หมวด 10: อื่นๆ & การตั้งค่า (91-100)
+-- =================================================================
+do
+    Tabs.Settings:AddButton({Title = "96. รีเซ็ตค่าทั้งหมด", Callback = function()
+        Fluent:Destroy()
+    end})
+    
+    Tabs.Settings:AddButton({Title = "100. ปิดสคริปต์ชั่วคราว", Callback = function()
+        Fluent:Destroy()
+    end})
+end
+
+-- โหลดระบบการบันทึกตั้งค่า
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({})
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+
+Window:SelectTab(1)
+Fluent:Notify({
+    Title = "PEERAWAT Script",
+    Content = "โหลดสคริปต์เรียบร้อยแล้ว พร้อมใช้งาน!",
+    Duration = 5
+})
